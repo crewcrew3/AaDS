@@ -116,28 +116,93 @@ public class BStarTree {
         delete(root, key);
     }
 
-    private void delete(Node node, int key) {
+    public void delete(Node node, int key) { //основной подсчет операций ведется во вспомогательных методах
         if (node == null) {
             return;
         }
+
         int i = 0;
         while (i < node.getSize() && key > node.getKeys()[i]) {
             i++;
             operationCount++;
         }
+
+        // Случай 1: Ключ найден в текущем узле
         if (i < node.getSize() && key == node.getKeys()[i]) {
-        } else if (node.isLeaf()) {
-            return;
+            if (node.isLeaf()) {
+                removeFromLeaf(node, i);
+            } else {
+                removeFromNonLeaf(node, i);
+            }
+        } else {
+            // Случай 2: Ключ не найден в текущем узле
+            if (node.isLeaf()) {
+                return; // Ключ отсутствует в дереве
+            }
+
+            // Ключ может быть в поддереве
+            boolean flag = i == node.getSize(); // Флаг, указывающий, является ли дочерний узел последним
+            if (node.getChildren()[i].getSize() < M) {
+                fillChild(node, i);
+            }
+
+            if (flag && i > node.getSize()) {
+                delete(node.getChildren()[i - 1], key);
+            } else {
+                delete(node.getChildren()[i], key);
+            }
         }
         operationCount++;
-        delete(node.getChildren()[i], key);
     }
 
-    public void removeFromLeaf(Node node, int index) { //просто удаляем из листа
+    public void removeFromNonLeaf(Node node, int index) {
+        int key = node.getKeys()[index];
+
+        // Случай 1: Предшественник имеет не менее M ключей
+        if (node.getChildren()[index].getSize() >= M) {
+            int pred = getPred(node, index);
+            node.getKeys()[index] = pred;
+            operationCount++;
+            delete(node.getChildren()[index], pred);
+        }
+        // Случай 2: Последователь имеет не менее M ключей
+        else if (node.getChildren()[index + 1].getSize() >= M) {
+            int succ = getSucc(node, index);
+            node.getKeys()[index] = succ;
+            operationCount++;
+            delete(node.getChildren()[index + 1], succ);
+        }
+        // Случай 3: Оба дочерних узла имеют M-1 ключей, объединяем их
+        else {
+            mergeChildren(node, index);
+            delete(node.getChildren()[index], key);
+        }
+    }
+
+    public void removeFromLeaf(Node node, int index) { //Удаление сразу из листа
         for (int i = index + 1; i < node.getSize(); i++) {
             node.getKeys()[i - 1] = node.getKeys()[i];
         }
+        operationCount++;
         node.setSize(node.getSize() - 1);
+    }
+
+    public int getPred(Node node, int index) {
+        Node cur = node.getChildren()[index];
+        while (!cur.isLeaf()) {
+            cur = cur.getChildren()[cur.getSize()];
+        }
+        operationCount++;
+        return cur.getKeys()[cur.getSize() - 1];
+    }
+
+    public int getSucc(Node node, int index) {
+        Node cur = node.getChildren()[index + 1];
+        while (!cur.isLeaf()) {
+            cur = cur.getChildren()[0];
+        }
+        operationCount++;
+        return cur.getKeys()[0];
     }
 
     public void fillChild(Node node, int index) {
@@ -154,33 +219,37 @@ public class BStarTree {
         }
     }
 
-    public void borrowFromPrev(Node node, int index) { //заимствуем из левого сиблинга
+    public void borrowFromPrev(Node node, int index) { //заимствуем у левого сиблинга
         Node child = node.getChildren()[index];
         Node sibling = node.getChildren()[index - 1];
 
         for (int i = child.getSize() - 1; i >= 0; i--) {
             child.getKeys()[i + 1] = child.getKeys()[i];
         }
+        operationCount++;
 
         if (!child.isLeaf()) {
             for (int i = child.getSize(); i >= 0; i--) {
                 child.getChildren()[i + 1] = child.getChildren()[i];
             }
+            operationCount++;
         }
 
         child.getKeys()[0] = node.getKeys()[index - 1];
 
         if (!child.isLeaf()) {
             child.getChildren()[0] = sibling.getChildren()[sibling.getSize()];
+            operationCount++;
         }
 
         node.getKeys()[index - 1] = sibling.getKeys()[sibling.getSize() - 1];
+        operationCount++;
 
         child.setSize(child.getSize() + 1);
         sibling.setSize(sibling.getSize() - 1);
     }
 
-    public void borrowFromNext(Node node, int index) { //заимствуем из правого сиблинга
+    public void borrowFromNext(Node node, int index) { //заимствуем у правого сиблинга
         Node child = node.getChildren()[index];
         Node sibling = node.getChildren()[index + 1];
 
@@ -188,6 +257,7 @@ public class BStarTree {
 
         if (!child.isLeaf()) {
             child.getChildren()[child.getSize() + 1] = sibling.getChildren()[0];
+            operationCount++;
         }
 
         node.getKeys()[index] = sibling.getKeys()[0];
@@ -195,11 +265,13 @@ public class BStarTree {
         for (int i = 1; i < sibling.getSize(); i++) {
             sibling.getKeys()[i - 1] = sibling.getKeys()[i];
         }
+        operationCount++;
 
         if (!sibling.isLeaf()) {
             for (int i = 1; i <= sibling.getSize(); i++) {
                 sibling.getChildren()[i - 1] = sibling.getChildren()[i];
             }
+            operationCount++;
         }
 
         child.setSize(child.getSize() + 1);
@@ -215,20 +287,24 @@ public class BStarTree {
         for (int i = 0; i < sibling.getSize(); i++) {
             child.getKeys()[i + M] = sibling.getKeys()[i];
         }
+        operationCount++;
 
         if (!child.isLeaf()) {
             for (int i = 0; i <= sibling.getSize(); i++) {
                 child.getChildren()[i + M] = sibling.getChildren()[i];
             }
+            operationCount++;
         }
 
         for (int i = index + 1; i < node.getSize() - 1; i++) {
             node.getKeys()[i] = node.getKeys()[i + 1];
         }
+        operationCount++;
 
         for (int i = index + 2; i <= node.getSize(); i++) {
             node.getChildren()[i - 1] = node.getChildren()[i];
         }
+        operationCount++;
         child.setSize(child.getSize() + sibling.getSize() + 1);
         node.setSize(node.getSize() - 1);
     }

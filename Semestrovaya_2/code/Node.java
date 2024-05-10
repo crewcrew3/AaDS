@@ -15,24 +15,6 @@ public class Node {
         this.leaf = leaf;
     }
 
-    public int find(int k) {
-        for (int i = 0; i < this.size; i++) {
-            if (this.keys[i] == k) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public Integer findIndexOfChild(Node node) {
-        for (int i = 0; i < this.children.length; i++) {
-            if (children[i] == node) {
-                return i;
-            }
-        }
-        return null;
-    }
-
     public int[] getKeys() {
         return keys;
     }
@@ -45,10 +27,6 @@ public class Node {
         return leaf;
     }
 
-    public void setLeaf(boolean leaf) {
-        this.leaf = leaf;
-    }
-
     public int getSize() {
         return size;
     }
@@ -56,11 +34,6 @@ public class Node {
     public void setSize(int size) {
         this.size = size;
     }
-
-    public Node getParent() {
-        return parent;
-    }
-
     public void setParent(Node parent) {
         this.parent = parent;
     }
