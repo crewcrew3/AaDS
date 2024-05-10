@@ -133,7 +133,7 @@ public class BStarTree {
         delete(node.getChildren()[i], key);
     }
 
-    public void removeFromLeaf(Node node, int index) {
+    public void removeFromLeaf(Node node, int index) { //просто удаляем из листа
         for (int i = index + 1; i < node.getSize(); i++) {
             node.getKeys()[i - 1] = node.getKeys()[i];
         }
@@ -154,7 +154,7 @@ public class BStarTree {
         }
     }
 
-    public void borrowFromPrev(Node node, int index) {
+    public void borrowFromPrev(Node node, int index) { //заимствуем из левого сиблинга
         Node child = node.getChildren()[index];
         Node sibling = node.getChildren()[index - 1];
 
@@ -180,7 +180,7 @@ public class BStarTree {
         sibling.setSize(sibling.getSize() - 1);
     }
 
-    public void borrowFromNext(Node node, int index) {
+    public void borrowFromNext(Node node, int index) { //заимствуем из правого сиблинга
         Node child = node.getChildren()[index];
         Node sibling = node.getChildren()[index + 1];
 
